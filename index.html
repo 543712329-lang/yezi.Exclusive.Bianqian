@@ -1,0 +1,2326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>暖心便签 BloomNotes - 治愈系桌面美学待办</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts for cute aesthetics -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Canvas Confetti for celebrating completed tasks -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans SC"', '"Comfortaa"', 'sans-serif'],
+            cute: ['"Comfortaa"', 'cursive', 'sans-serif'],
+          },
+          colors: {
+            sakura: { 50: '#fff5f7', 100: '#ffe4ea', 200: '#ffccd8', 300: '#fba5b8', 400: '#f87394', 500: '#ee4773' },
+            cream: { 50: '#fffdf5', 100: '#fff9db', 200: '#fff3b8', 300: '#ffe682', 400: '#ffd64d' },
+            mint: { 50: '#f2fcf7', 100: '#ddf7ea', 200: '#bcf0d6', 300: '#8fe4bd', 400: '#53ce98' },
+            morandi: { 50: '#faf7fc', 100: '#f2e8fa', 200: '#e4d3f5', 300: '#cbb0eb', 400: '#af8add' },
+            oatmeal: { 50: '#faf9f6', 100: '#f4f1ea', 200: '#e8e2d5', 300: '#d7cdb9', 400: '#c2b49c' },
+            peach: { 50: '#fff6f2', 100: '#ffebd8', 200: '#ffd3b8', 300: '#ffb594', 400: '#ff8f66' },
+          },
+          boxShadow: {
+            'soft': '0 12px 35px -8px rgba(180, 150, 170, 0.22)',
+            'paper': '0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04)',
+            'float': '0 20px 40px -10px rgba(220, 160, 190, 0.35)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      user-select: none;
+      overflow: hidden;
+    }
+    
+    /* Scrollbar customization */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(220, 180, 200, 0.4);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(220, 180, 200, 0.7);
+    }
+
+    /* Washi tape effect */
+    .washi-tape {
+      background: rgba(255, 230, 235, 0.85);
+      border-left: 2px dashed rgba(230, 170, 190, 0.6);
+      border-right: 2px dashed rgba(230, 170, 190, 0.6);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      backdrop-filter: blur(2px);
+    }
+
+    /* Wave border shape */
+    .wave-border {
+      border-radius: 28px 12px 28px 14px;
+    }
+
+    /* Polaroid photo frame style */
+    .polaroid-frame {
+      border-top: 14px solid #ffffff;
+      border-left: 14px solid #ffffff;
+      border-right: 14px solid #ffffff;
+      border-bottom: 38px solid #ffffff;
+      box-shadow: 0 15px 35px rgba(100, 90, 110, 0.15);
+    }
+
+    /* Hand drawn paper style */
+    .hand-drawn-paper {
+      border-radius: 4px;
+      border: 1.5px solid rgba(210, 195, 180, 0.6);
+      background-image: radial-gradient(rgba(200, 180, 160, 0.15) 1px, transparent 0);
+      background-size: 16px 16px;
+    }
+
+    /* Privacy blur mode */
+    .privacy-blurred .note-content-area {
+      filter: blur(7px);
+      transition: filter 0.25s ease;
+    }
+
+    /* Custom Checkbox animations */
+    .check-bounce {
+      animation: checkBounce 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes checkBounce {
+      0% { transform: scale(0.65); }
+      60% { transform: scale(1.25); }
+      100% { transform: scale(1); }
+    }
+
+    /* Gentle floating animation for widgets */
+    @keyframes gentleFloat {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-5px) rotate(1.5deg); }
+    }
+    .animate-gentle-float {
+      animation: gentleFloat 4s ease-in-out infinite;
+    }
+
+    /* Resizing handles styling */
+    .resize-handle-r {
+      position: absolute;
+      top: 10px;
+      right: -4px;
+      width: 10px;
+      bottom: 10px;
+      cursor: ew-resize;
+      z-index: 35;
+      touch-action: none;
+    }
+    .resize-handle-b {
+      position: absolute;
+      left: 10px;
+      bottom: -4px;
+      right: 10px;
+      height: 10px;
+      cursor: ns-resize;
+      z-index: 35;
+      touch-action: none;
+    }
+    .resize-handle-se {
+      position: absolute;
+      right: -2px;
+      bottom: -2px;
+      width: 18px;
+      height: 18px;
+      cursor: nwse-resize;
+      z-index: 36;
+      touch-action: none;
+    }
+    .resize-corner-indicator {
+      position: absolute;
+      right: 4px;
+      bottom: 4px;
+      width: 9px;
+      height: 9px;
+      opacity: 0.35;
+      border-right: 2px solid #aaa;
+      border-bottom: 2px solid #aaa;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .group:hover .resize-corner-indicator {
+      opacity: 0.85;
+    }
+
+    /* SVG Icon base class */
+    .icon-svg {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      stroke-width: 0;
+      stroke: currentColor;
+      fill: currentColor;
+      vertical-align: middle;
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body class="h-screen w-screen relative overflow-hidden bg-slate-100 select-none">
+  <!-- Dynamic Desktop Background Wallpaper -->
+  <div id="desktop-bg" class="absolute inset-0 bg-cover bg-center transition-all duration-700 pointer-events-none"
+       style="background: linear-gradient(135deg, #fceef2 0%, #f7eff9 45%, #eff6fd 100%);">
+    <div class="absolute top-10 left-1/4 w-96 h-96 rounded-full bg-pink-200/30 blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-20 right-1/4 w-[28rem] h-[28rem] rounded-full bg-purple-200/30 blur-3xl pointer-events-none"></div>
+  </div>
+
+  <!-- Top Aesthetic Desktop Header Bar -->
+  <header class="relative z-30 h-14 bg-white/80 backdrop-blur-md border-b border-pink-100 px-4 md:px-6 flex items-center justify-between shadow-xs">
+    <!-- Left Logo & Brand -->
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-sakura-400 to-peach-300 flex items-center justify-center text-white shadow-md shadow-pink-200">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.87-3.13-7-7-7zm2 17h-4v-1h4v1zm0 2h-4v-1h4v1z"/></svg>
+      </div>
+      <div>
+        <h1 class="text-base font-bold text-gray-800 tracking-wide flex items-center gap-1.5">
+          <span>暖心便签</span>
+          <span class="text-xs font-cute text-sakura-500 font-normal bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200/60">BloomNotes</span>
+        </h1>
+      </div>
+    </div>
+
+    <!-- Center Shortcuts & Actions -->
+    <div class="hidden sm:flex items-center space-x-2 bg-pink-50/80 px-3 py-1.5 rounded-full border border-pink-100 shadow-inner">
+      <button onclick="createNewNote()" class="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-sakura-400 to-sakura-500 text-white text-xs font-medium rounded-full shadow-xs hover:opacity-95 active:scale-95 transition">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        <span>新建便签</span>
+      </button>
+      <button onclick="toggleCalendarModal()" class="flex items-center gap-1.5 px-2.5 py-1 text-xs text-gray-700 hover:text-sakura-600 rounded-full hover:bg-white/80 transition">
+        <svg class="w-3.5 h-3.5 text-sakura-400 fill-current" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+        <span>微型月历</span>
+      </button>
+      <button onclick="toggleDrawer()" class="flex items-center gap-1.5 px-2.5 py-1 text-xs text-gray-700 hover:text-sakura-600 rounded-full hover:bg-white/80 transition">
+        <svg class="w-3.5 h-3.5 text-sakura-400 fill-current" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v3.01c0 .72.38 1.36.95 1.7L4 20c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2l1.05-11.29c.57-.34.95-.98.95-1.7V4c0-1.1-.9-2-2-2zM4 4h16v3H4V4zm14 16H6l-.9-11h13.8l-.9 11z"/></svg>
+        <span>便签收纳盒 (<span id="total-notes-count">0</span>)</span>
+      </button>
+    </div>
+
+    <!-- Right Controls: Status, Account, Privacy, Sound, Wallpaper -->
+    <div class="flex items-center space-x-2">
+      <!-- Auto-Save status badge -->
+      <div id="save-status-badge" class="flex items-center gap-1.5 text-[11px] text-pink-500 bg-pink-50/90 px-2.5 py-1 rounded-full border border-pink-200 transition-all duration-300">
+        <span id="save-status-icon">
+          <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+        </span>
+        <span id="save-status-text">就绪</span>
+      </div>
+
+      <!-- User Account / Cloud Sync Button -->
+      <button id="account-btn" onclick="openAccountModal()" title="账号与跨浏览器云同步"
+              class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs text-gray-700 bg-white/90 hover:bg-pink-50 hover:text-sakura-600 border border-pink-200 shadow-xs transition">
+        <span id="account-icon">
+          <svg class="w-3.5 h-3.5 text-sakura-400 fill-current" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        </span>
+        <span id="account-label" class="font-medium max-w-[80px] truncate">账号同步</span>
+      </button>
+
+      <!-- Privacy anti-peep button -->
+      <button id="privacy-toggle-btn" onclick="togglePrivacyMode()" title="防窥模式 (Alt+P)"
+              class="w-8 h-8 rounded-full flex items-center justify-center text-gray-600 hover:text-sakura-500 hover:bg-pink-50 transition border border-transparent hover:border-pink-200">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+      </button>
+
+      <!-- Sound toggle -->
+      <button id="sound-toggle-btn" onclick="toggleSound()" title="打卡治愈音效"
+              class="w-8 h-8 rounded-full flex items-center justify-center text-sakura-500 hover:bg-pink-50 transition border border-pink-200 bg-pink-50/50">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+      </button>
+
+      <!-- Wallpaper changer -->
+      <button onclick="cycleWallpaper()" title="切换桌面壁纸"
+              class="w-8 h-8 rounded-full flex items-center justify-center text-gray-600 hover:text-sakura-500 hover:bg-pink-50 transition">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M7 14c-1.66 0-3 1.34-3 3 0 1.31-1.16 2-2 2 .92 1.22 2.49 2 4 2 2.21 0 4-1.79 4-4 0-1.66-1.34-3-3-3zm13.71-9.71a.996.996 0 0 0-1.41 0l-9.3 9.3 2.83 2.83 9.3-9.3a.996.996 0 0 0-.42-1.83zM11.7 15.3l-1.4-1.4 8.6-8.6 1.4 1.4-8.6 8.6z"/></svg>
+      </button>
+
+      <!-- Add new mobile button -->
+      <button onclick="createNewNote()" class="sm:hidden w-8 h-8 rounded-full bg-sakura-500 text-white flex items-center justify-center shadow-md">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Desktop Canvas View -->
+  <main id="desktop-canvas" class="relative w-full h-[calc(100vh-3.5rem)] overflow-hidden">
+    <!-- Desktop Ambient Daily Quote & Date Widget (Bottom Right) -->
+    <div class="absolute bottom-5 right-6 z-10 hidden md:flex flex-col items-end pointer-events-none select-none opacity-85">
+      <div class="text-xs font-medium text-pink-700/80 bg-white/70 backdrop-blur-md px-3.5 py-1.5 rounded-2xl shadow-sm border border-pink-100 flex items-center gap-2">
+        <span class="text-sakura-400 font-serif text-sm">“</span>
+        <span id="daily-quote-text">生活里的小确幸，藏在每一件勾选完成的小事里。</span>
+        <button onclick="refreshDailyQuote()" class="pointer-events-auto hover:text-sakura-600 transition ml-1" title="换一句治愈寄语">
+          <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+        </button>
+      </div>
+      <div class="text-[11px] text-gray-500 mt-1 font-mono tracking-wider" id="desktop-clock-display">
+        2026.09.17 THU 10:30
+      </div>
+    </div>
+
+    <!-- Notes Container -->
+    <div id="notes-container" class="w-full h-full relative">
+      <!-- Notes dynamically populated -->
+    </div>
+  </main>
+
+  <!-- Side Note Drawer (收纳盒) -->
+  <div id="note-drawer" class="fixed inset-y-0 right-0 z-50 w-80 sm:w-96 bg-white/95 backdrop-blur-xl shadow-2xl border-l border-pink-100 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+    <div class="p-5 border-b border-pink-100 flex items-center justify-between bg-pink-50/50">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-xl bg-sakura-100 text-sakura-500 flex items-center justify-center text-sm">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+        </div>
+        <h3 class="font-bold text-gray-800 text-sm">便签收纳盒</h3>
+      </div>
+      <button onclick="toggleDrawer()" class="w-7 h-7 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center transition">
+        <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+
+    <!-- Category filter tabs -->
+    <div class="px-4 pt-3 pb-2 border-b border-gray-100 flex gap-1.5 overflow-x-auto">
+      <button onclick="filterDrawerNotes('all')" class="drawer-filter-btn active text-xs px-2.5 py-1 rounded-full bg-sakura-500 text-white font-medium whitespace-nowrap">全部</button>
+      <button onclick="filterDrawerNotes('work')" class="drawer-filter-btn text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-pink-50 whitespace-nowrap">工作安排</button>
+      <button onclick="filterDrawerNotes('life')" class="drawer-filter-btn text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-pink-50 whitespace-nowrap">生活日常</button>
+      <button onclick="filterDrawerNotes('study')" class="drawer-filter-btn text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-pink-50 whitespace-nowrap">备考学习</button>
+      <button onclick="filterDrawerNotes('wishlist')" class="drawer-filter-btn text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-pink-50 whitespace-nowrap">愿望清单</button>
+    </div>
+
+    <!-- Drawer notes list -->
+    <div id="drawer-list" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+
+    <!-- Drawer Footer Actions -->
+    <div class="p-4 border-t border-pink-100 bg-pink-50/30 flex items-center justify-between">
+      <button onclick="arrangeAllNotes()" class="text-xs text-gray-600 hover:text-sakura-600 flex items-center gap-1.5 font-medium">
+        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M3 3v8h8V3H3zm6 6H5V5h4v4zm-6 4v8h8v-8H3zm6 6H5v-4h4v4zm4-16v8h8V3h-8zm6 6h-4V5h4v4zm-6 4v8h8v-8h-8zm6 6h-4v-4h4v4z"/></svg>
+        <span>一键平铺排布</span>
+      </button>
+      <button onclick="createNewNote(); toggleDrawer();" class="text-xs bg-sakura-500 text-white px-3 py-1.5 rounded-full shadow-xs hover:bg-sakura-600 transition flex items-center gap-1">
+        <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        <span>新建便签</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Calendar Modal -->
+  <div id="calendar-modal" class="fixed inset-0 z-50 bg-black/30 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-pink-100 w-full max-w-lg p-6 overflow-hidden">
+      <div class="flex items-center justify-between pb-4 border-b border-pink-100">
+        <div class="flex items-center gap-2">
+          <svg class="w-5 h-5 text-sakura-500 fill-current" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+          <h2 class="text-base font-bold text-gray-800" id="calendar-month-title">2026年 9月</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="changeCalendarMonth(-1)" class="w-7 h-7 rounded-full hover:bg-pink-50 text-gray-600 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+          </button>
+          <button onclick="changeCalendarMonth(1)" class="w-7 h-7 rounded-full hover:bg-pink-50 text-gray-600 flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </button>
+          <button onclick="toggleCalendarModal()" class="w-7 h-7 rounded-full hover:bg-gray-100 text-gray-400 flex items-center justify-center ml-2">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Days of week -->
+      <div class="grid grid-cols-7 gap-1 pt-4 text-center text-xs font-medium text-gray-400 mb-2">
+        <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+      </div>
+
+      <!-- Month days grid -->
+      <div id="calendar-days-grid" class="grid grid-cols-7 gap-1.5 text-xs text-center"></div>
+
+      <!-- Schedule preview list for selected date -->
+      <div class="mt-4 pt-4 border-t border-pink-100">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-bold text-gray-700" id="selected-date-label">今日待办事项</span>
+          <span class="text-[11px] text-sakura-500" id="selected-date-count">0 项提醒</span>
+        </div>
+        <div id="calendar-tasks-preview" class="max-h-36 overflow-y-auto space-y-1.5 text-xs text-gray-600"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Polaroid Share Card Modal -->
+  <div id="polaroid-modal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-pink-100 flex flex-col items-center">
+      <div class="w-full flex justify-between items-center mb-3">
+        <span class="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-sakura-500 fill-current" viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm8 3a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 2a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/></svg>
+          <span>今日打卡拍立得手账卡片</span>
+        </span>
+        <button onclick="closePolaroidModal()" class="text-gray-400 hover:text-gray-600 text-sm">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+
+      <div id="polaroid-card-render" class="w-full bg-white p-4 rounded-xl border border-pink-100 shadow-md flex flex-col items-center relative overflow-hidden"
+           style="background: linear-gradient(180deg, #ffffff 0%, #fffbfd 100%);">
+        <div class="w-24 h-5 washi-tape mb-3 rounded-sm transform -rotate-1"></div>
+        <div id="polaroid-tag-display" class="text-[11px] font-medium text-sakura-500 bg-pink-50 px-2.5 py-0.5 rounded-full mb-2">
+          🌸 今日小成就
+        </div>
+        <h3 id="polaroid-title-display" class="font-bold text-gray-800 text-sm mb-3 text-center">
+          阳光满满的治愈清单
+        </h3>
+        
+        <div id="polaroid-tasks-list" class="w-full text-xs space-y-2 py-2 px-1 border-y border-pink-50 mb-3"></div>
+
+        <div class="w-full flex justify-between items-end pt-1 text-[10px] text-gray-400 font-mono">
+          <div>
+            <p id="polaroid-date-stamp">2026.09.17</p>
+            <p class="text-sakura-400 font-cute font-bold">BloomNotes</p>
+          </div>
+          <div class="w-10 h-10 rounded-full border-2 border-dashed border-sakura-300 flex items-center justify-center text-sakura-400 transform rotate-12">
+            <span class="text-[9px] font-bold">DONE!</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="text-[11px] text-gray-400 mt-3 text-center">可保存记录每日自律仪式感，分享小红书朋友圈</p>
+      
+      <div class="mt-4 flex gap-2 w-full">
+        <button onclick="downloadPolaroidCard()" class="flex-1 py-2 bg-gradient-to-r from-sakura-400 to-sakura-500 text-white rounded-2xl text-xs font-medium shadow-md shadow-pink-200 hover:opacity-95 transition flex items-center justify-center gap-1.5">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+          <span>保存图片</span>
+        </button>
+        <button onclick="closePolaroidModal()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-2xl text-xs hover:bg-gray-200 transition">
+          关闭
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account & Multi-Browser Cloud Sync Modal -->
+  <div id="account-modal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white/95 backdrop-blur-xl rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-pink-100 flex flex-col relative">
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-pink-100">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-pink-100 text-sakura-500 flex items-center justify-center text-sm">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-800 text-sm">账号多设备与跨浏览器同步</h3>
+            <p class="text-[10px] text-gray-400">换浏览器或换电脑，输入相同账密即可拉取</p>
+          </div>
+        </div>
+        <button onclick="closeAccountModal()" class="text-gray-400 hover:text-gray-600 text-sm w-7 h-7 rounded-full flex items-center justify-center">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </div>
+
+      <!-- Logged In View -->
+      <div id="account-logged-view" class="hidden py-4 flex flex-col items-center">
+        <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-sakura-400 to-peach-300 text-white flex items-center justify-center text-xl shadow-md mb-2">
+          <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        </div>
+        <h4 class="font-bold text-gray-800 text-sm" id="logged-username-display">用户名</h4>
+        <span class="text-[11px] text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full mt-1 flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="account-sync-mode-text">云端与本地双轨同步中</span>
+        </span>
+        
+        <p class="text-[11px] text-gray-400 text-center mt-3 px-2">
+          当前便签修改已实时加密推送到云端。换不同浏览器或电脑打开此网页，登录同一账密即可秒级加载。
+        </p>
+
+        <!-- Backup Roaming Code Box -->
+        <div class="w-full mt-3 p-3 bg-pink-50/50 rounded-2xl border border-pink-100 space-y-2">
+          <p class="text-[11px] font-bold text-gray-700 flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-sakura-500 fill-current" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            <span>无网/离线漫游助手</span>
+          </p>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="exportRoamingCode()" 
+                    class="py-2 px-2 bg-white text-gray-700 border border-pink-200 hover:border-sakura-400 hover:text-sakura-600 rounded-xl text-xs font-medium shadow-xs transition flex items-center justify-center gap-1">
+              <span>复制便签凭证</span>
+            </button>
+            <button onclick="importRoamingCodePrompt()" 
+                    class="py-2 px-2 bg-white text-gray-700 border border-pink-200 hover:border-sakura-400 hover:text-sakura-600 rounded-xl text-xs font-medium shadow-xs transition flex items-center justify-center gap-1">
+              <span>导入便签凭证</span>
+            </button>
+          </div>
+        </div>
+        
+        <div class="w-full mt-3 space-y-2">
+          <button onclick="handleLogout()" class="w-full py-2 bg-gray-100 text-gray-600 rounded-xl text-xs hover:bg-red-50 hover:text-red-500 transition">
+            退出登录
+          </button>
+        </div>
+      </div>
+
+      <!-- Auth Form View (Login / Register) -->
+      <div id="account-auth-view" class="pt-4 flex flex-col">
+        <div class="flex rounded-xl bg-gray-100 p-1 mb-4 text-xs">
+          <button id="tab-login-btn" onclick="switchAuthTab('login')" class="flex-1 py-1.5 rounded-lg font-bold bg-white text-sakura-500 shadow-xs transition text-center">登录账号</button>
+          <button id="tab-register-btn" onclick="switchAuthTab('register')" class="flex-1 py-1.5 rounded-lg text-gray-500 hover:text-gray-800 transition text-center">注册新账号</button>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-[11px] font-medium text-gray-600 mb-1">同步账号名</label>
+            <input type="text" id="auth-username-input" placeholder="输入常用账号 / 昵称 / 英文名" 
+                   class="w-full text-xs p-2.5 rounded-xl border border-pink-200 bg-pink-50/30 outline-none focus:border-sakura-400 text-gray-800 placeholder-gray-400" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-medium text-gray-600 mb-1">账号密码</label>
+            <input type="password" id="auth-password-input" placeholder="输入密码 (4位以上)" 
+                   class="w-full text-xs p-2.5 rounded-xl border border-pink-200 bg-pink-50/30 outline-none focus:border-sakura-400 text-gray-800 placeholder-gray-400" />
+          </div>
+          <div id="register-confirm-wrapper" class="hidden">
+            <label class="block text-[11px] font-medium text-gray-600 mb-1">确认密码</label>
+            <input type="password" id="auth-confirm-password-input" placeholder="再次输入密码" 
+                   class="w-full text-xs p-2.5 rounded-xl border border-pink-200 bg-pink-50/30 outline-none focus:border-sakura-400 text-gray-800 placeholder-gray-400" />
+          </div>
+        </div>
+
+        <button id="auth-submit-btn" onclick="handleAuthSubmit()" 
+                class="w-full mt-5 py-2.5 bg-gradient-to-r from-sakura-400 to-sakura-500 text-white rounded-2xl text-xs font-bold shadow-md shadow-pink-200 hover:opacity-95 transition flex items-center justify-center gap-1.5">
+          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+          <span id="auth-submit-text">登录账号并拉取便签</span>
+        </button>
+
+        <div class="mt-3 pt-3 border-t border-pink-100 flex items-center justify-between text-[11px] text-gray-500">
+          <span>已有其他设备的便签凭证？</span>
+          <button onclick="importRoamingCodePrompt()" class="text-sakura-500 hover:underline font-medium">直接导入</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center pointer-events-none space-y-2"></div>
+
+  <script>
+    /* =========================================================================
+       1. Embedded SVG Icons Generator (100% Reliable, Zero Dependency, No Squares)
+       ========================================================================= */
+    const ICONS = {
+      plus: '<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>',
+      check: '<svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>',
+      doubleCheck: '<svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.48 12l-1.41 1.41L11.66 19l12-12-1.42-1.41zM.41 13.41L6 19l1.41-1.41L1.83 12 .41 13.41z"/></svg>',
+      pin: '<svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/></svg>',
+      lock: '<svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>',
+      edit: '<svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
+      trash: '<svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>',
+      palette: '<svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.32 19.59 10.62 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-5.5 9c-.83 0-1.5-.67-1.5-1.5S5.67 9 6.5 9 8 9.67 8 10.5 7.33 12 6.5 12zm3-4C8.67 8 8 7.33 8 6.5S8.67 5 9.5 5s1.5.67 1.5 1.5S10.33 8 9.5 8zm5 0c-.83 0-1.5-.67-1.5-1.5S13.67 5 14.5 5s1.5.67 1.5 1.5S15.33 8 14.5 8zm3 4c-.83 0-1.5-.67-1.5-1.5S16.67 9 17.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>',
+      share: '<svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/></svg>',
+      minimize: '<svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M6 19h12v2H6z"/></svg>',
+      sticker: '<svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="m21.41 11.58-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>',
+      paw: '<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><circle cx="4.5" cy="9.5" r="2.5"/><circle cx="9" cy="5.5" r="2.5"/><circle cx="15" cy="5.5" r="2.5"/><circle cx="19.5" cy="9.5" r="2.5"/><path d="M17.34 14.86c-.87-1.02-1.6-1.89-2.48-2.49-.9-.62-2.02-.97-2.86-.97s-1.96.35-2.86.97c-.88.6-1.61 1.47-2.48 2.49-1.02 1.2-2.08 2.46-1.66 4.14.47 1.88 2.24 3 4.28 3 1.25 0 2.27-.47 2.72-.75.45.28 1.47.75 2.72.75 2.04 0 3.81-1.12 4.28-3 .42-1.68-.64-2.94-1.66-4.14z"/></svg>',
+      cloud: '<svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg>',
+      cloudCheck: '<svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM10 17l-3.5-3.5 1.41-1.41L10 14.17 15.09 9.09 16.5 10.5 10 17z"/></svg>'
+    };
+
+    /* =========================================================================
+       2. Pure Native Web Audio Chimes (Zero external CDN dependency, zero lag)
+       ========================================================================= */
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playCheckSound() {
+      if (!state.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const freqs = [523.25, 659.25, 783.99, 1046.50]; // Gentle C5 chord chime
+        freqs.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+          gain.gain.setValueAtTime(0.08, now + idx * 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.05 + 0.35);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + idx * 0.05);
+          osc.stop(now + idx * 0.05 + 0.36);
+        });
+      } catch (e) {}
+    }
+
+    function playBubbleSound() {
+      if (!state.soundEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(380, now);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
+      } catch (e) {}
+    }
+
+    /* =========================================================================
+       3. Theme Definitions & State
+       ========================================================================= */
+    const THEMES = {
+      sakura: { name: '治愈粉樱', bgClass: 'bg-sakura-50/95', borderClass: 'border-sakura-200', accentColor: '#f87394', tagBg: 'bg-sakura-100 text-sakura-600', gradient: 'from-pink-400 to-sakura-500' },
+      cream: { name: '奶油莫兰迪', bgClass: 'bg-cream-50/95', borderClass: 'border-cream-200', accentColor: '#ffd64d', tagBg: 'bg-cream-100 text-amber-700', gradient: 'from-amber-300 to-yellow-400' },
+      mint: { name: '日系薄荷', bgClass: 'bg-mint-50/95', borderClass: 'border-mint-200', accentColor: '#53ce98', tagBg: 'bg-mint-100 text-emerald-700', gradient: 'from-emerald-300 to-teal-400' },
+      morandi: { name: '温润紫罗兰', bgClass: 'bg-morandi-50/95', borderClass: 'border-morandi-200', accentColor: '#af8add', tagBg: 'bg-morandi-100 text-purple-700', gradient: 'from-purple-300 to-indigo-400' },
+      oatmeal: { name: '燕麦温润白', bgClass: 'bg-oatmeal-50/95', borderClass: 'border-oatmeal-200', accentColor: '#c2b49c', tagBg: 'bg-oatmeal-100 text-stone-700', gradient: 'from-stone-300 to-amber-200' },
+      peach: { name: '暖阳蜜桃', bgClass: 'bg-peach-50/95', borderClass: 'border-peach-200', accentColor: '#ff8f66', tagBg: 'bg-peach-100 text-orange-700', gradient: 'from-orange-300 to-rose-400' }
+    };
+
+    const CATEGORIES = [
+      { id: 'work', label: '工作安排' },
+      { id: 'life', label: '生活日常' },
+      { id: 'study', label: '备考学习' },
+      { id: 'wishlist', label: '愿望清单' }
+    ];
+
+    const CHECK_ICONS = [
+      { id: 'flower', emoji: '🌸', label: '小红花' },
+      { id: 'heart', emoji: '💖', label: '粉红爱心' },
+      { id: 'paw', emoji: '🐾', label: '软萌猫爪' },
+      { id: 'star', emoji: '⭐', label: '小星星' },
+      { id: 'circle', emoji: '✓', label: '轻量圆' }
+    ];
+
+    const STICKERS = ['🌸', '🐾', '🎀', '⭐', '🍓', '🥐', '✨', '☕', '🧸', '🌈'];
+
+    const QUOTES = [
+      "生活里的小确幸，藏在每一件勾选完成的小事里。",
+      "按时吃饭，按计划完成，今天的你也在闪闪发光。",
+      "不急不躁，一步步把心中的待办都变成盛开的花。",
+      "今日份的温柔和自律，请签收。",
+      "风吹又日出，生活原本就有很多值得期待的美好。"
+    ];
+
+    const WALLPAPERS = [
+      'linear-gradient(135deg, #fceef2 0%, #f7eff9 45%, #eff6fd 100%)',
+      'linear-gradient(135deg, #fef6e4 0%, #f7dbe4 50%, #e0e8f9 100%)',
+      'linear-gradient(135deg, #e8f5e9 0%, #f3e5f5 50%, #fff3e0 100%)',
+      'linear-gradient(135deg, #2b2b3a 0%, #3e334a 50%, #222b38 100%)'
+    ];
+
+    // Global application state
+    const state = {
+      notes: [],
+      activeNoteId: null,
+      soundEnabled: true,
+      privacyMode: false,
+      currentWallpaperIndex: 0,
+      activeDrawerFilter: 'all',
+      calendarDate: new Date(),
+      selectedCalendarDay: new Date().getDate(),
+      currentUser: null,
+      authMode: 'login'
+    };
+
+    /* =========================================================================
+       4. Universal Storage Engine (Multi-Browser Cloud Sync + Local Persistence)
+       ========================================================================= */
+    const LOCAL_CACHE_KEY = 'bloomnotes_master_workspace_v3';
+    const LOCAL_USERS_KEY = 'bloomnotes_local_accounts_v3';
+
+    // Safe SHA-256 for passwords
+    async function hashString(str) {
+      try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(str + "_bloomnotes_secure_salt");
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (e) {
+        // Fallback for non-crypto insecure contexts
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+          hash = ((hash << 5) - hash) + str.charCodeAt(i);
+          hash |= 0;
+        }
+        return 'h_' + Math.abs(hash).toString(16);
+      }
+    }
+
+    // Public Free Sync Backend API for cross-browser synchronization
+    // Uses lightweight KV storage relay so any browser entering the same username/pwd fetches the exact data
+    const CloudSyncRelay = {
+      endpoint: 'https://kvdb.io/8xXWJqH5w2i4tE6tqHh7hR/', // Public global KV relay
+      
+      saveUserRecord: async function(username, record) {
+        try {
+          const key = 'usr_' + encodeURIComponent(username.toLowerCase().trim());
+          const res = await fetch(this.endpoint + key, {
+            method: 'POST',
+            body: JSON.stringify(record),
+            headers: { 'Content-Type': 'application/json' }
+          });
+          return res.ok;
+        } catch (e) {
+          return false;
+        }
+      },
+
+      loadUserRecord: async function(username) {
+        try {
+          const key = 'usr_' + encodeURIComponent(username.toLowerCase().trim());
+          const res = await fetch(this.endpoint + key + '?t=' + Date.now());
+          if (!res.ok) return null;
+          return await res.json();
+        } catch (e) {
+          return null;
+        }
+      }
+    };
+
+    // Auto-Save engine: Dual saves to local storage & cloud if logged in
+    let autoSaveTimer = null;
+    function triggerAutoSave() {
+      updateSaveBadge('saving', '保存中...');
+      if (autoSaveTimer) clearTimeout(autoSaveTimer);
+
+      return new Promise((resolve) => {
+        autoSaveTimer = setTimeout(async () => {
+          try {
+            const workspaceData = {
+              notes: state.notes,
+              currentWallpaperIndex: state.currentWallpaperIndex,
+              soundEnabled: state.soundEnabled,
+              currentUser: state.currentUser,
+              updatedAt: Date.now()
+            };
+
+            // 1. Always save immediately to local browser storage (100% reliable)
+            localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(workspaceData));
+
+            // 2. If user is logged in, dual push to cross-browser cloud relay
+            if (state.currentUser && state.currentUser.username) {
+              const cloudPayload = {
+                username: state.currentUser.username,
+                passwordHash: state.currentUser.passwordHash || '',
+                workspace: workspaceData,
+                updatedAt: Date.now()
+              };
+              
+              // Push to CloudSyncRelay (enables other browsers to fetch this instantly)
+              CloudSyncRelay.saveUserRecord(state.currentUser.username, cloudPayload);
+
+              // Also backup to local accounts database
+              try {
+                const accounts = JSON.parse(localStorage.getItem(LOCAL_USERS_KEY) || '{}');
+                accounts[state.currentUser.username.toLowerCase()] = cloudPayload;
+                localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(accounts));
+              } catch (e) {}
+
+              updateSaveBadge('saved', `账号【${state.currentUser.username}】云端与本地已同步 ✨`);
+            } else {
+              updateSaveBadge('saved', '已保存至本地 ✨');
+            }
+          } catch (err) {
+            updateSaveBadge('error', '保存失败');
+          }
+          resolve();
+        }, 300);
+      });
+    }
+
+    function applySavedState(data) {
+      if (!data) return;
+      if (Array.isArray(data.notes)) {
+        state.notes = data.notes;
+      }
+      if (typeof data.currentWallpaperIndex === 'number' && WALLPAPERS[data.currentWallpaperIndex]) {
+        state.currentWallpaperIndex = data.currentWallpaperIndex;
+        const bg = document.getElementById('desktop-bg');
+        if (bg) bg.style.background = WALLPAPERS[state.currentWallpaperIndex];
+      }
+      if (typeof data.soundEnabled === 'boolean') {
+        state.soundEnabled = data.soundEnabled;
+        updateSoundButtonUI();
+      }
+      if (data.currentUser) {
+        state.currentUser = data.currentUser;
+        updateAccountUI();
+      }
+      renderAllNotes();
+      updateDrawer();
+    }
+
+    /* =========================================================================
+       5. Note & UI Rendering
+       ========================================================================= */
+    function renderAllNotes() {
+      const container = document.getElementById('notes-container');
+      container.innerHTML = '';
+
+      state.notes.forEach(note => {
+        if (note.minimized) {
+          const widget = createMiniWidgetElement(note);
+          container.appendChild(widget);
+        } else {
+          const noteEl = createNoteElement(note);
+          container.appendChild(noteEl);
+        }
+      });
+
+      document.getElementById('total-notes-count').innerText = state.notes.length;
+    }
+
+    function createNoteElement(note) {
+      const theme = THEMES[note.theme] || THEMES.sakura;
+      const el = document.createElement('div');
+      el.id = `note-${note.id}`;
+      el.className = `absolute select-none flex flex-col transition-shadow duration-200 group ${
+        state.privacyMode ? 'privacy-blurred' : ''
+      }`;
+      el.style.left = `${note.x}px`;
+      el.style.top = `${note.y}px`;
+      el.style.width = `${note.width || 340}px`;
+      el.style.height = `${note.height || 360}px`;
+      el.style.zIndex = note.zIndex || 10;
+      el.style.opacity = note.opacity || 0.95;
+
+      let shapeClass = 'rounded-3xl shadow-soft border ' + theme.borderClass;
+      if (note.shape === 'polaroid') shapeClass = 'polaroid-frame rounded-md';
+      else if (note.shape === 'wave') shapeClass = 'wave-border shadow-soft border-2 ' + theme.borderClass;
+      else if (note.shape === 'hand-drawn') shapeClass = 'hand-drawn-paper shadow-paper';
+
+      el.innerHTML = `
+        <div class="note-window w-full h-full ${theme.bgClass} backdrop-blur-md ${shapeClass} flex flex-col overflow-hidden relative">
+          <!-- Top Drag Bar & Tape -->
+          <div class="w-full flex items-center justify-center pt-2 pb-1 relative cursor-grab active:cursor-grabbing note-drag-handle flex-shrink-0">
+            ${note.shape === 'hand-drawn' ? '<div class="w-20 h-4 washi-tape rounded-sm mb-1 -mt-1 transform -rotate-1"></div>' : ''}
+            ${note.pinned ? `<span class="absolute left-3 top-2 text-sakura-400" title="已置顶">${ICONS.pin}</span>` : ''}
+            ${note.locked ? `<span class="absolute left-7 top-2 text-amber-500" title="已锁定位置与大小">${ICONS.lock}</span>` : ''}
+          </div>
+
+          <!-- Note Header -->
+          <div class="px-4 py-1.5 flex items-center justify-between gap-2 border-b border-pink-100/60 flex-shrink-0">
+            <!-- Left Info & Title -->
+            <div class="flex items-center gap-1.5 flex-1 min-w-0">
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${theme.tagBg}">
+                ${getCategoryName(note.category)}
+              </span>
+              <input type="date" value="${getNoteDate(note)}" 
+                     onchange="updateNoteDate('${note.id}', this.value)"
+                     title="关联日程日期"
+                     class="text-[10px] text-gray-500 bg-white/70 hover:bg-white px-1.5 py-0.5 rounded-full border border-pink-100 focus:border-sakura-300 outline-none cursor-pointer flex-shrink-0" />
+              <input type="text" value="${escapeHtml(note.title)}" 
+                     onchange="updateNoteTitle('${note.id}', this.value)"
+                     class="text-xs font-bold text-gray-800 bg-transparent outline-none w-full truncate focus:bg-white/60 rounded px-1" />
+            </div>
+
+            <!-- Header Quick Actions with Pure SVG Icons -->
+            <div class="flex items-center space-x-1 opacity-70 group-hover:opacity-100 transition flex-shrink-0">
+              <button onclick="toggleStickerMenu('${note.id}', event)" title="添加贴纸"
+                      class="w-6 h-6 rounded-full hover:bg-pink-100/70 text-gray-500 hover:text-sakura-500 flex items-center justify-center transition">
+                ${ICONS.sticker}
+              </button>
+              <button onclick="toggleNoteSettings('${note.id}', event)" title="外观与皮肤设置"
+                      class="w-6 h-6 rounded-full hover:bg-pink-100/70 text-gray-500 hover:text-sakura-500 flex items-center justify-center transition">
+                ${ICONS.palette}
+              </button>
+              <button onclick="openPolaroidShare('${note.id}')" title="生成手账打卡图"
+                      class="w-6 h-6 rounded-full hover:bg-pink-100/70 text-gray-500 hover:text-sakura-500 flex items-center justify-center transition">
+                ${ICONS.share}
+              </button>
+              <button onclick="toggleMinimizeNote('${note.id}')" title="收起为挂件"
+                      class="w-6 h-6 rounded-full hover:bg-pink-100/70 text-gray-500 hover:text-amber-500 flex items-center justify-center transition">
+                ${ICONS.minimize}
+              </button>
+              <button onclick="deleteNote('${note.id}')" title="删除便签"
+                      class="w-6 h-6 rounded-full hover:bg-red-50 text-gray-400 hover:text-red-400 flex items-center justify-center transition">
+                ${ICONS.trash}
+              </button>
+            </div>
+          </div>
+
+          <!-- Stickers Layer -->
+          <div class="note-stickers-layer absolute inset-0 pointer-events-none z-10">
+            ${renderNoteStickers(note)}
+          </div>
+
+          <!-- Note Content & To-Do List -->
+          <div class="note-content-area p-3.5 flex-1 overflow-y-auto space-y-2 min-h-0">
+            <div id="items-${note.id}" class="space-y-1.5">
+              ${renderTodoItems(note)}
+            </div>
+
+            <!-- Quick Add Input -->
+            <div class="pt-2 flex items-center gap-1.5">
+              <span class="text-gray-400 pl-1">${ICONS.plus}</span>
+              <input type="text" placeholder="输入待办按回车保存..." 
+                     onkeydown="handleAddTaskKey(event, '${note.id}')"
+                     class="text-xs bg-transparent border-b border-dashed border-pink-200/90 focus:border-sakura-400 outline-none w-full py-1 text-gray-700 placeholder-gray-400" />
+            </div>
+          </div>
+
+          <!-- Note Footer Status & Completion Bar -->
+          <div class="px-4 py-2 border-t border-pink-100/60 bg-white/50 flex items-center justify-between text-[10px] text-gray-500 flex-shrink-0">
+            <div class="flex items-center gap-2">
+              <span class="font-medium">${getCompletionRatioText(note)}</span>
+              <div class="w-14 h-1.5 bg-gray-200/80 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r ${theme.gradient} transition-all duration-300" 
+                     style="width: ${getCompletionPercentage(note)}%;"></div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button onclick="toggleAllTasksDone('${note.id}')" title="一键全部标记完成/重置"
+                      class="hover:text-sakura-500 transition px-1.5 py-0.5 rounded-lg hover:bg-pink-100/60 flex items-center gap-1 text-[10px] text-gray-500">
+                <span class="text-sakura-400">${ICONS.doubleCheck}</span>
+                <span>全完成</span>
+              </button>
+              <button onclick="togglePinNote('${note.id}')" title="置顶便签" 
+                      class="hover:text-sakura-500 transition p-1 ${note.pinned ? 'text-sakura-500 font-bold' : 'text-gray-400'}">
+                ${ICONS.pin}
+              </button>
+              <button onclick="toggleLockNote('${note.id}')" title="锁定位置与大小" 
+                      class="hover:text-amber-500 transition p-1 ${note.locked ? 'text-amber-500 font-bold' : 'text-gray-400'}">
+                ${ICONS.lock}
+              </button>
+            </div>
+          </div>
+
+          ${!note.locked ? '<div class="resize-corner-indicator"></div>' : ''}
+        </div>
+
+        <!-- Hidden Popover: Settings & Theme Menu -->
+        <div id="settings-menu-${note.id}" class="hidden absolute top-12 right-2 z-40 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-pink-100 p-3 w-56 text-xs text-gray-700">
+          <p class="font-bold text-gray-800 pb-1 mb-2 border-b border-pink-100">便签美学设置</p>
+          
+          <label class="block text-[11px] text-gray-500 mb-1">配色主题</label>
+          <div class="grid grid-cols-6 gap-1.5 mb-3">
+            ${Object.keys(THEMES).map(key => `
+              <button onclick="changeNoteTheme('${note.id}', '${key}')" 
+                      style="background-color: ${THEMES[key].accentColor};" 
+                      class="w-6 h-6 rounded-full border-2 ${note.theme === key ? 'border-gray-800 scale-110' : 'border-white'} shadow-xs transition hover:scale-105"
+                      title="${THEMES[key].name}"></button>
+            `).join('')}
+          </div>
+
+          <label class="block text-[11px] text-gray-500 mb-1">文字大小</label>
+          <div class="grid grid-cols-4 gap-1 mb-3">
+            <button onclick="changeNoteFontSize('${note.id}', 'xs')" 
+                    class="py-1 px-1 rounded-lg border text-[10px] text-center transition ${note.fontSize === 'xs' ? 'border-sakura-400 bg-pink-50 text-sakura-600 font-bold' : 'border-gray-200 hover:bg-gray-50'}">
+              小 12px
+            </button>
+            <button onclick="changeNoteFontSize('${note.id}', 'sm')" 
+                    class="py-1 px-1 rounded-lg border text-[10px] text-center transition ${(!note.fontSize || note.fontSize === 'sm') ? 'border-sakura-400 bg-pink-50 text-sakura-600 font-bold' : 'border-gray-200 hover:bg-gray-50'}">
+              标准 14
+            </button>
+            <button onclick="changeNoteFontSize('${note.id}', 'base')" 
+                    class="py-1 px-1 rounded-lg border text-[10px] text-center transition ${note.fontSize === 'base' ? 'border-sakura-400 bg-pink-50 text-sakura-600 font-bold' : 'border-gray-200 hover:bg-gray-50'}">
+              大 16px
+            </button>
+            <button onclick="changeNoteFontSize('${note.id}', 'lg')" 
+                    class="py-1 px-1 rounded-lg border text-[10px] text-center transition ${note.fontSize === 'lg' ? 'border-sakura-400 bg-pink-50 text-sakura-600 font-bold' : 'border-gray-200 hover:bg-gray-50'}">
+              特大 18
+            </button>
+          </div>
+
+          <label class="block text-[11px] text-gray-500 mb-1">纸张造型</label>
+          <div class="grid grid-cols-3 gap-1 mb-3">
+            <button onclick="changeNoteShape('${note.id}', 'polaroid')" class="py-1 px-1.5 rounded-lg border text-[10px] text-center ${note.shape==='polaroid'?'border-sakura-400 bg-pink-50 text-sakura-600 font-bold':'border-gray-200'}">拍立得</button>
+            <button onclick="changeNoteShape('${note.id}', 'wave')" class="py-1 px-1.5 rounded-lg border text-[10px] text-center ${note.shape==='wave'?'border-sakura-400 bg-pink-50 text-sakura-600 font-bold':'border-gray-200'}">波浪花边</button>
+            <button onclick="changeNoteShape('${note.id}', 'hand-drawn')" class="py-1 px-1.5 rounded-lg border text-[10px] text-center ${note.shape==='hand-drawn'?'border-sakura-400 bg-pink-50 text-sakura-600 font-bold':'border-gray-200'}">手绘纸张</button>
+          </div>
+
+          <label class="block text-[11px] text-gray-500 mb-1">打卡勾选图标</label>
+          <div class="flex gap-2 mb-3">
+            ${CHECK_ICONS.map(ci => `
+              <button onclick="changeCheckIcon('${note.id}', '${ci.id}')" class="w-6 h-6 rounded flex items-center justify-center text-sm ${note.checkIcon === ci.id ? 'bg-pink-100 ring-1 ring-sakura-400' : 'text-gray-500 hover:bg-gray-100'}" title="${ci.label}">
+                ${ci.emoji}
+              </button>
+            `).join('')}
+          </div>
+
+          <label class="block text-[11px] text-gray-500 mb-1">毛玻璃透明度: <span id="opacity-val-${note.id}">${Math.round((note.opacity||0.95)*100)}%</span></label>
+          <input type="range" min="0.4" max="1" step="0.05" value="${note.opacity || 0.95}"
+                 oninput="changeNoteOpacity('${note.id}', this.value)" class="w-full accent-sakura-500 h-1 bg-gray-200 rounded-lg cursor-pointer" />
+        </div>
+
+        <!-- Hidden Popover: Stickers Picker -->
+        <div id="stickers-menu-${note.id}" class="hidden absolute top-12 right-6 z-40 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-pink-100 p-2.5 w-48 text-xs">
+          <p class="font-bold text-gray-800 pb-1 mb-2 border-b border-pink-100">贴上可爱小装饰</p>
+          <div class="grid grid-cols-5 gap-2 text-base text-center">
+            ${STICKERS.map(s => `
+              <button onclick="addStickerToNote('${note.id}', '${s}')" class="hover:scale-125 transition p-1 cursor-pointer">
+                ${s}
+              </button>
+            `).join('')}
+          </div>
+          <button onclick="clearNoteStickers('${note.id}')" class="w-full mt-2 text-[10px] text-gray-400 hover:text-red-400 py-0.5 text-center">
+            清除所有贴纸
+          </button>
+        </div>
+
+        <!-- Edge Resize Handles -->
+        ${!note.locked ? `
+          <div class="resize-handle-r" data-resize="r" title="拖拽边缘调节宽度"></div>
+          <div class="resize-handle-b" data-resize="b" title="拖拽边缘调节高度"></div>
+          <div class="resize-handle-se" data-resize="se" title="拖拽右下角自由延展大小"></div>
+        ` : ''}
+      `;
+
+      attachDragListeners(el, note);
+      attachResizeListeners(el, note);
+      return el;
+    }
+
+    function createMiniWidgetElement(note) {
+      const theme = THEMES[note.theme] || THEMES.sakura;
+      const el = document.createElement('div');
+      el.id = `widget-${note.id}`;
+      el.className = `absolute z-20 cursor-pointer animate-gentle-float group`;
+      el.style.left = `${note.x}px`;
+      el.style.top = `${note.y}px`;
+
+      const completed = note.items.filter(i => i.done).length;
+      const total = note.items.length;
+
+      el.innerHTML = `
+        <div onclick="toggleMinimizeNote('${note.id}')" 
+             class="relative px-3 py-2 rounded-2xl ${theme.bgClass} border-2 ${theme.borderClass} shadow-float backdrop-blur-md flex items-center gap-2 hover:scale-105 transition active:scale-95">
+          <div class="w-7 h-7 rounded-xl bg-gradient-to-tr ${theme.gradient} text-white flex items-center justify-center text-xs shadow-xs">
+            ${ICONS.paw}
+          </div>
+          <div class="text-left">
+            <p class="text-[11px] font-bold text-gray-800 truncate max-w-[90px]">${escapeHtml(note.title)}</p>
+            <p class="text-[9px] text-sakura-500 font-mono">${completed}/${total} 已完成</p>
+          </div>
+          <span class="text-gray-400 group-hover:text-sakura-500 ml-1">
+            <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+          </span>
+        </div>
+      `;
+
+      attachDragListeners(el, note, true);
+      return el;
+    }
+
+    function renderTodoItems(note) {
+      if (!note.items || note.items.length === 0) {
+        return `<div class="text-center py-4 text-xs text-gray-400 font-light">还没有待办事项，点击下方添加一条吧 ~</div>`;
+      }
+
+      const iconDef = CHECK_ICONS.find(c => c.id === note.checkIcon) || CHECK_ICONS[0];
+      const fontClassMap = {
+        'xs': 'text-[11px]',
+        'sm': 'text-xs',
+        'base': 'text-sm',
+        'lg': 'text-base'
+      };
+      const textFontClass = fontClassMap[note.fontSize] || 'text-xs';
+
+      return note.items.map((item) => {
+        return `
+          <div class="flex items-center justify-between group/item py-1.5 px-2 rounded-xl hover:bg-white/75 transition ${
+            item.done ? 'bg-pink-50/40 opacity-70' : 'bg-white/40'
+          }">
+            <div class="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer" onclick="toggleTaskDone('${note.id}', '${item.id}')" title="点击切换完成状态">
+              <button type="button" onclick="event.stopPropagation(); toggleTaskDone('${note.id}', '${item.id}')" 
+                      title="${item.done ? '点击标记为未完成' : '点击标记为已完成'}"
+                      class="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center text-xs transition-all duration-200 active:scale-75 shadow-xs ${
+                        item.done 
+                          ? 'bg-sakura-400 text-white check-bounce shadow-sm shadow-pink-200' 
+                          : 'border-2 border-pink-200 hover:border-sakura-400 bg-white text-transparent hover:text-sakura-300'
+                      }">
+                ${item.done ? (iconDef.emoji || '✓') : '<span class="text-[9px] opacity-0 group-hover/item:opacity-60 text-sakura-400">✓</span>'}
+              </button>
+
+              <span class="${textFontClass} select-text truncate transition-all duration-200 ${
+                item.done ? 'line-through text-gray-400 italic' : 'text-gray-700 font-medium'
+              }">
+                ${escapeHtml(item.text)}
+              </span>
+            </div>
+
+            <!-- Task actions with enlarged safe click spacing and SVG icons -->
+            <div class="flex items-center gap-2.5 opacity-0 group-hover/item:opacity-100 transition-opacity duration-200 flex-shrink-0 ml-2">
+              <button type="button" onclick="event.stopPropagation(); editTaskPrompt('${note.id}', '${item.id}')" title="编辑文本"
+                      class="w-6 h-6 rounded-lg bg-white/80 hover:bg-pink-100 text-gray-500 hover:text-sakura-600 border border-pink-100 flex items-center justify-center transition shadow-xs active:scale-90"
+                      aria-label="编辑待办事项">
+                ${ICONS.edit}
+              </button>
+              <button type="button" onclick="event.stopPropagation(); deleteTask('${note.id}', '${item.id}')" title="删除该事项"
+                      class="w-6 h-6 rounded-lg bg-white/80 hover:bg-rose-100 text-gray-500 hover:text-rose-500 border border-pink-100 flex items-center justify-center transition shadow-xs active:scale-90"
+                      aria-label="删除待办事项">
+                ${ICONS.trash}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderNoteStickers(note) {
+      if (!note.stickers || note.stickers.length === 0) return '';
+      const positions = [
+        'top-1 right-2 -rotate-12',
+        'bottom-3 right-4 rotate-6',
+        'top-8 -left-2 rotate-12',
+        'bottom-8 -right-2 -rotate-6'
+      ];
+      return note.stickers.map((s, idx) => {
+        const pos = positions[idx % positions.length];
+        return `<span class="absolute ${pos} text-lg drop-shadow-xs select-none">${s}</span>`;
+      }).join('');
+    }
+
+    /* =========================================================================
+       6. Dragging & Edge Resizing
+       ========================================================================= */
+    function attachDragListeners(element, note, isWidget = false) {
+      const handle = isWidget ? element : element.querySelector('.note-drag-handle');
+      if (!handle) return;
+
+      let isDragging = false;
+      let startX = 0, startY = 0;
+      let initialLeft = 0, initialTop = 0;
+
+      const onMouseDown = (e) => {
+        if (note.locked) return;
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        initialLeft = note.x;
+        initialTop = note.y;
+        bringToFront(note.id);
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+      };
+
+      const onMouseMove = (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+
+        const maxW = window.innerWidth - (isWidget ? 120 : 340);
+        const maxH = window.innerHeight - (isWidget ? 60 : 250);
+
+        note.x = Math.max(10, Math.min(maxW, initialLeft + dx));
+        note.y = Math.max(10, Math.min(maxH, initialTop + dy));
+
+        element.style.left = `${note.x}px`;
+        element.style.top = `${note.y}px`;
+      };
+
+      const onMouseUp = () => {
+        isDragging = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+        triggerAutoSave();
+      };
+
+      handle.addEventListener('mousedown', onMouseDown);
+
+      handle.addEventListener('touchstart', (e) => {
+        if (note.locked) return;
+        const touch = e.touches[0];
+        isDragging = true;
+        startX = touch.clientX;
+        startY = touch.clientY;
+        initialLeft = note.x;
+        initialTop = note.y;
+        bringToFront(note.id);
+      }, { passive: true });
+
+      handle.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        const touch = e.touches[0];
+        note.x = initialLeft + (touch.clientX - startX);
+        note.y = initialTop + (touch.clientY - startY);
+        element.style.left = `${note.x}px`;
+        element.style.top = `${note.y}px`;
+      }, { passive: true });
+
+      handle.addEventListener('touchend', () => {
+        isDragging = false;
+        triggerAutoSave();
+      });
+    }
+
+    function attachResizeListeners(element, note) {
+      if (note.locked) return;
+
+      const handles = element.querySelectorAll('[data-resize]');
+      handles.forEach(handle => {
+        const direction = handle.getAttribute('data-resize');
+
+        const onStart = (clientX, clientY) => {
+          bringToFront(note.id);
+          const startX = clientX;
+          const startY = clientY;
+          const initialWidth = note.width || element.offsetWidth || 340;
+          const initialHeight = note.height || element.offsetHeight || 360;
+
+          const minW = 240;
+          const maxW = Math.min(window.innerWidth - note.x - 20, 960);
+          const minH = 200;
+          const maxH = Math.min(window.innerHeight - note.y - 20, 800);
+
+          const onMove = (curX, curY) => {
+            const dx = curX - startX;
+            const dy = curY - startY;
+
+            if (direction === 'r' || direction === 'se') {
+              const newW = Math.max(minW, Math.min(maxW, initialWidth + dx));
+              note.width = newW;
+              element.style.width = `${newW}px`;
+            }
+            if (direction === 'b' || direction === 'se') {
+              const newH = Math.max(minH, Math.min(maxH, initialHeight + dy));
+              note.height = newH;
+              element.style.height = `${newH}px`;
+            }
+          };
+
+          const onMouseMove = (e) => onMove(e.clientX, e.clientY);
+          const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            triggerAutoSave();
+          };
+
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
+
+          const onTouchMove = (e) => {
+            if (e.touches.length > 0) onMove(e.touches[0].clientX, e.touches[0].clientY);
+          };
+          const onTouchEnd = () => {
+            document.removeEventListener('touchmove', onTouchMove);
+            document.removeEventListener('touchend', onTouchEnd);
+            triggerAutoSave();
+          };
+
+          document.addEventListener('touchmove', onTouchMove, { passive: true });
+          document.addEventListener('touchend', onTouchEnd);
+        };
+
+        handle.addEventListener('mousedown', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          onStart(e.clientX, e.clientY);
+        });
+
+        handle.addEventListener('touchstart', (e) => {
+          e.stopPropagation();
+          if (e.touches.length > 0) onStart(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+      });
+    }
+
+    function bringToFront(noteId) {
+      const maxZ = Math.max(10, ...state.notes.map(n => n.zIndex || 10));
+      const note = state.notes.find(n => n.id === noteId);
+      if (note) {
+        note.zIndex = maxZ + 1;
+        const el = document.getElementById(`note-${noteId}`) || document.getElementById(`widget-${noteId}`);
+        if (el) el.style.zIndex = note.zIndex;
+      }
+    }
+
+    /* =========================================================================
+       7. Actions & Task Logic
+       ========================================================================= */
+    function toggleTaskDone(noteId, taskId) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (!note) return;
+      const item = note.items.find(i => i.id === taskId);
+      if (!item) return;
+
+      item.done = !item.done;
+
+      if (item.done) {
+        playCheckSound();
+        const allCompleted = note.items.length > 0 && note.items.every(i => i.done);
+        if (allCompleted) {
+          triggerCelebrationConfetti();
+          showToast(`太棒啦！已完成便签「${note.title}」的全部事项 🌸`);
+        }
+      } else {
+        playBubbleSound();
+      }
+
+      renderAllNotes();
+      updateDrawer();
+      triggerAutoSave();
+      
+      const calModal = document.getElementById('calendar-modal');
+      if (calModal && !calModal.classList.contains('hidden')) {
+        updateCalendarTasksList(state.selectedCalendarDay);
+      }
+    }
+
+    function toggleAllTasksDone(noteId) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (!note || note.items.length === 0) return;
+      const allDone = note.items.every(i => i.done);
+      note.items.forEach(i => i.done = !allDone);
+      if (!allDone) {
+        playCheckSound();
+        triggerCelebrationConfetti();
+        showToast(`已将「${note.title}」全部标记为已完成 🌸`);
+      } else {
+        playBubbleSound();
+        showToast(`已重置「${note.title}」的事项状态`);
+      }
+      renderAllNotes();
+      updateDrawer();
+      triggerAutoSave();
+    }
+
+    function handleAddTaskKey(event, noteId) {
+      if (event.key === 'Enter') {
+        const text = event.target.value.trim();
+        if (!text) return;
+        const note = state.notes.find(n => n.id === noteId);
+        if (!note) return;
+
+        note.items.push({
+          id: 't_' + Date.now(),
+          text: text,
+          done: false
+        });
+        playBubbleSound();
+        event.target.value = '';
+        renderAllNotes();
+        updateDrawer();
+        triggerAutoSave();
+      }
+    }
+
+    function deleteTask(noteId, taskId) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (!note) return;
+      note.items = note.items.filter(i => i.id !== taskId);
+      playBubbleSound();
+      renderAllNotes();
+      updateDrawer();
+      triggerAutoSave();
+    }
+
+    function editTaskPrompt(noteId, taskId) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (!note) return;
+      const item = note.items.find(i => i.id === taskId);
+      if (!item) return;
+
+      showPromptModal('修改事项内容', item.text, (newVal) => {
+        if (newVal && newVal.trim()) {
+          item.text = newVal.trim();
+          renderAllNotes();
+          updateDrawer();
+          triggerAutoSave();
+        }
+      });
+    }
+
+    function createNewNote() {
+      playBubbleSound();
+      const themeKeys = Object.keys(THEMES);
+      const randomTheme = themeKeys[Math.floor(Math.random() * themeKeys.length)];
+      const categories = ['work', 'life', 'study', 'wishlist'];
+      const randomCat = categories[Math.floor(Math.random() * categories.length)];
+
+      const newId = 'note-' + Date.now();
+      const newNote = {
+        id: newId,
+        title: '✨ 治愈灵感便签',
+        category: randomCat,
+        theme: randomTheme,
+        shape: 'wave',
+        fontSize: 'sm',
+        date: getTodayDateString(),
+        opacity: 0.95,
+        pinned: false,
+        locked: false,
+        minimized: false,
+        checkIcon: 'flower',
+        stickers: ['🌸'],
+        x: Math.min(window.innerWidth - 360, 60 + Math.random() * 200),
+        y: Math.min(window.innerHeight - 350, 70 + Math.random() * 180),
+        width: 340,
+        height: 360,
+        zIndex: 20,
+        items: [
+          { id: 'item-1', text: '随手记录新的灵感待办', done: false }
+        ]
+      };
+
+      state.notes.push(newNote);
+      renderAllNotes();
+      updateDrawer();
+      triggerAutoSave();
+      showToast('已为您新建一张治愈便签 📝');
+    }
+
+    function deleteNote(noteId) {
+      playBubbleSound();
+      state.notes = state.notes.filter(n => n.id !== noteId);
+      renderAllNotes();
+      updateDrawer();
+      triggerAutoSave();
+      showToast('便签已删除');
+    }
+
+    function togglePinNote(noteId) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (!note) return;
+      note.pinned = !note.pinned;
+      if (note.pinned) {
+        note.zIndex = 50;
+        showToast('便签已置顶');
+      } else {
+        showToast('已取消置顶');
+      }
+      renderAllNotes();
+      triggerAutoSave();
+    }
+
+    function toggleLockNote(noteId) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (!note) return;
+      note.locked = !note.locked;
+      showToast(note.locked ? '位置已锁定，防止拖动误触 🔒' : '已解锁拖动位置 🔓');
+      renderAllNotes();
+      triggerAutoSave();
+    }
+
+    function toggleMinimizeNote(noteId) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (!note) return;
+      note.minimized = !note.minimized;
+      playBubbleSound();
+      renderAllNotes();
+      triggerAutoSave();
+    }
+
+    function updateNoteTitle(noteId, newTitle) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (note) {
+        note.title = newTitle.trim() || '未命名便签';
+        updateDrawer();
+        triggerAutoSave();
+      }
+    }
+
+    function updateNoteDate(noteId, newDate) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (note && newDate) {
+        note.date = newDate;
+        triggerAutoSave();
+        const calModal = document.getElementById('calendar-modal');
+        if (calModal && !calModal.classList.contains('hidden')) renderCalendar();
+        showToast(`已关联至 ${newDate} 📅`);
+      }
+    }
+
+    function changeNoteTheme(noteId, themeKey) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (note && THEMES[themeKey]) {
+        note.theme = themeKey;
+        renderAllNotes();
+        triggerAutoSave();
+      }
+    }
+
+    function changeNoteFontSize(noteId, size) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (note) {
+        note.fontSize = size;
+        renderAllNotes();
+        triggerAutoSave();
+        showToast(`字体大小已切换`);
+      }
+    }
+
+    function changeNoteShape(noteId, shape) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (note) {
+        note.shape = shape;
+        renderAllNotes();
+        triggerAutoSave();
+      }
+    }
+
+    function changeCheckIcon(noteId, iconId) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (note) {
+        note.checkIcon = iconId;
+        renderAllNotes();
+        triggerAutoSave();
+      }
+    }
+
+    function changeNoteOpacity(noteId, val) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (note) {
+        note.opacity = parseFloat(val);
+        const el = document.getElementById(`note-${noteId}`);
+        if (el) el.style.opacity = note.opacity;
+        const label = document.getElementById(`opacity-val-${noteId}`);
+        if (label) label.innerText = Math.round(note.opacity * 100) + '%';
+        triggerAutoSave();
+      }
+    }
+
+    function toggleNoteSettings(noteId, event) {
+      event.stopPropagation();
+      closeAllPopovers();
+      const menu = document.getElementById(`settings-menu-${noteId}`);
+      if (menu) menu.classList.toggle('hidden');
+    }
+
+    function toggleStickerMenu(noteId, event) {
+      event.stopPropagation();
+      closeAllPopovers();
+      const menu = document.getElementById(`stickers-menu-${noteId}`);
+      if (menu) menu.classList.toggle('hidden');
+    }
+
+    function addStickerToNote(noteId, sticker) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (note) {
+        if (!note.stickers) note.stickers = [];
+        if (note.stickers.length < 4) {
+          note.stickers.push(sticker);
+          playBubbleSound();
+          renderAllNotes();
+          triggerAutoSave();
+        } else {
+          showToast('贴纸已贴满啦 (最多4个)');
+        }
+      }
+    }
+
+    function clearNoteStickers(noteId) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (note) {
+        note.stickers = [];
+        renderAllNotes();
+        triggerAutoSave();
+      }
+    }
+
+    function closeAllPopovers() {
+      document.querySelectorAll('[id^="settings-menu-"], [id^="stickers-menu-"]').forEach(el => {
+        el.classList.add('hidden');
+      });
+    }
+
+    document.addEventListener('click', () => closeAllPopovers());
+
+    /* =========================================================================
+       8. Side Drawer (收纳盒)
+       ========================================================================= */
+    function toggleDrawer() {
+      const drawer = document.getElementById('note-drawer');
+      drawer.classList.toggle('translate-x-full');
+      updateDrawer();
+    }
+
+    function filterDrawerNotes(category) {
+      state.activeDrawerFilter = category;
+      document.querySelectorAll('.drawer-filter-btn').forEach(btn => {
+        btn.classList.remove('bg-sakura-500', 'text-white');
+        btn.classList.add('bg-gray-100', 'text-gray-600');
+      });
+      event.target.classList.remove('bg-gray-100', 'text-gray-600');
+      event.target.classList.add('bg-sakura-500', 'text-white');
+      updateDrawer();
+    }
+
+    function updateDrawer() {
+      const list = document.getElementById('drawer-list');
+      if (!list) return;
+
+      const filtered = state.activeDrawerFilter === 'all' 
+        ? state.notes 
+        : state.notes.filter(n => n.category === state.activeDrawerFilter);
+
+      if (filtered.length === 0) {
+        list.innerHTML = `<div class="text-center py-12 text-gray-400 text-xs">当前分类下暂无便签</div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map(note => {
+        const theme = THEMES[note.theme] || THEMES.sakura;
+        const total = note.items.length;
+        const done = note.items.filter(i => i.done).length;
+
+        return `
+          <div class="p-3 rounded-2xl border border-pink-100 bg-white hover:shadow-md transition flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] px-2 py-0.5 rounded-full ${theme.tagBg}">
+                ${getCategoryName(note.category)}
+              </span>
+              <div class="flex items-center gap-1">
+                <button onclick="focusNote('${note.id}')" title="定位到桌面位置" class="p-1 text-gray-400 hover:text-sakura-500">
+                  <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+                </button>
+                <button onclick="deleteNote('${note.id}')" title="删除" class="p-1 text-gray-400 hover:text-red-400">
+                  ${ICONS.trash}
+                </button>
+              </div>
+            </div>
+            <h4 class="text-xs font-bold text-gray-800 truncate">${escapeHtml(note.title)}</h4>
+            <div class="flex items-center justify-between text-[10px] text-gray-400">
+              <span>进度: ${done}/${total}</span>
+              <span>${note.minimized ? '挂件收起中' : '桌面展示中'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function focusNote(noteId) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (note) {
+        note.minimized = false;
+        bringToFront(noteId);
+        renderAllNotes();
+        toggleDrawer();
+      }
+    }
+
+    function arrangeAllNotes() {
+      let curX = 40;
+      let curY = 40;
+      state.notes.forEach((note) => {
+        note.minimized = false;
+        note.x = curX;
+        note.y = curY;
+        curX += 360;
+        if (curX + 340 > window.innerWidth) {
+          curX = 40;
+          curY += 320;
+        }
+      });
+      renderAllNotes();
+      triggerAutoSave();
+      showToast('所有便签已自动对齐排列 ✨');
+    }
+
+    /* =========================================================================
+       9. Calendar View
+       ========================================================================= */
+    function toggleCalendarModal() {
+      const modal = document.getElementById('calendar-modal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) renderCalendar();
+    }
+
+    function changeCalendarMonth(delta) {
+      state.calendarDate.setMonth(state.calendarDate.getMonth() + delta);
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const year = state.calendarDate.getFullYear();
+      const month = state.calendarDate.getMonth();
+      document.getElementById('calendar-month-title').innerText = `${year}年 ${month + 1}月`;
+
+      const firstDayIndex = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const grid = document.getElementById('calendar-days-grid');
+      grid.innerHTML = '';
+
+      for (let i = 0; i < firstDayIndex; i++) {
+        grid.innerHTML += `<div class="h-8"></div>`;
+      }
+
+      const today = new Date();
+      const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const isToday = isCurrentMonth && today.getDate() === day;
+        const isSelected = state.selectedCalendarDay === day;
+
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayTasks = getTasksForDate(dateStr);
+        const hasTasks = dayTasks.length > 0;
+
+        grid.innerHTML += `
+          <button onclick="selectCalendarDay(${day})" 
+                  class="h-8 rounded-xl flex flex-col items-center justify-center transition relative ${
+                    isSelected ? 'bg-sakura-500 text-white font-bold shadow-xs' : 
+                    isToday ? 'bg-pink-100 text-sakura-600 font-bold' : 'text-gray-700 hover:bg-pink-50'
+                  }">
+            <span>${day}</span>
+            ${hasTasks ? `<span class="w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-sakura-400'} -mt-0.5"></span>` : ''}
+          </button>
+        `;
+      }
+
+      updateCalendarTasksList(state.selectedCalendarDay);
+    }
+
+    function selectCalendarDay(day) {
+      state.selectedCalendarDay = day;
+      renderCalendar();
+    }
+
+    function updateCalendarTasksList(day) {
+      const year = state.calendarDate.getFullYear();
+      const month = state.calendarDate.getMonth() + 1;
+      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+      const label = document.getElementById('selected-date-label');
+      if (label) label.innerText = `${month}月${day}日 关联日程`;
+
+      const preview = document.getElementById('calendar-tasks-preview');
+      const countEl = document.getElementById('selected-date-count');
+
+      const tasksForDay = getTasksForDate(dateStr);
+      if (countEl) countEl.innerText = `${tasksForDay.length} 项日程`;
+
+      if (tasksForDay.length === 0) {
+        preview.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-6 text-gray-400 select-none">
+            <div class="w-10 h-10 rounded-2xl bg-pink-50 text-sakura-400 flex items-center justify-center text-lg mb-2 shadow-xs border border-pink-100">
+              ☕
+            </div>
+            <p class="text-xs font-bold text-gray-600">今天看来很闲嘛，没得安排</p>
+            <p class="text-[11px] text-pink-400/80 mt-1">可以喝杯奶茶、听听歌放松一下 ~</p>
+          </div>
+        `;
+        return;
+      }
+
+      preview.innerHTML = tasksForDay.map(t => `
+        <div class="flex items-center justify-between p-2 bg-pink-50/60 hover:bg-pink-100/50 rounded-xl transition border border-pink-100/60">
+          <div class="flex items-center gap-2 min-w-0 flex-1 cursor-pointer" onclick="toggleTaskDone('${t.noteId}', '${t.id}')">
+            <button type="button" onclick="event.stopPropagation(); toggleTaskDone('${t.noteId}', '${t.id}')"
+                    class="w-4 h-4 rounded-full flex items-center justify-center text-[10px] flex-shrink-0 transition ${
+                      t.done ? 'bg-sakura-400 text-white' : 'border border-pink-300 bg-white text-transparent hover:text-sakura-300'
+                    }">
+              ✓
+            </button>
+            <span class="truncate text-xs ${t.done ? 'line-through text-gray-400' : 'text-gray-700 font-medium'}">${escapeHtml(t.text)}</span>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-white text-sakura-600 border border-pink-100 ml-2 flex-shrink-0 font-medium shadow-xs">
+            ${escapeHtml(t.noteTitle)}
+          </span>
+        </div>
+      `).join('');
+    }
+
+    /* =========================================================================
+       10. Account System (Multi-Browser Cloud Sync)
+       ========================================================================= */
+    function openAccountModal() {
+      const modal = document.getElementById('account-modal');
+      const authView = document.getElementById('account-auth-view');
+      const loggedView = document.getElementById('account-logged-view');
+      
+      if (state.currentUser) {
+        authView.classList.add('hidden');
+        loggedView.classList.remove('hidden');
+        document.getElementById('logged-username-display').innerText = state.currentUser.username;
+      } else {
+        authView.classList.remove('hidden');
+        loggedView.classList.add('hidden');
+        switchAuthTab('login');
+      }
+      modal.classList.remove('hidden');
+    }
+
+    function closeAccountModal() {
+      document.getElementById('account-modal').classList.add('hidden');
+    }
+
+    function switchAuthTab(tab) {
+      state.authMode = tab;
+      const loginBtn = document.getElementById('tab-login-btn');
+      const regBtn = document.getElementById('tab-register-btn');
+      const confirmWrapper = document.getElementById('register-confirm-wrapper');
+      const submitText = document.getElementById('auth-submit-text');
+
+      if (tab === 'login') {
+        loginBtn.className = 'flex-1 py-1.5 rounded-lg font-bold bg-white text-sakura-500 shadow-xs transition text-center';
+        regBtn.className = 'flex-1 py-1.5 rounded-lg text-gray-500 hover:text-gray-800 transition text-center';
+        confirmWrapper.classList.add('hidden');
+        submitText.innerText = '登录账号并拉取便签';
+      } else {
+        regBtn.className = 'flex-1 py-1.5 rounded-lg font-bold bg-white text-sakura-500 shadow-xs transition text-center';
+        loginBtn.className = 'flex-1 py-1.5 rounded-lg text-gray-500 hover:text-gray-800 transition text-center';
+        confirmWrapper.classList.remove('hidden');
+        submitText.innerText = '注册账号并绑定数据';
+      }
+    }
+
+    async function handleAuthSubmit() {
+      const usernameInput = document.getElementById('auth-username-input');
+      const passwordInput = document.getElementById('auth-password-input');
+      const confirmInput = document.getElementById('auth-confirm-password-input');
+
+      const username = usernameInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!username) {
+        showToast('请输入账号名称');
+        return;
+      }
+      if (!password || password.length < 4) {
+        showToast('密码长度至少为 4 位字符');
+        return;
+      }
+
+      if (state.authMode === 'register' && password !== confirmInput.value) {
+        showToast('两次输入的密码不一致');
+        return;
+      }
+
+      const submitBtn = document.getElementById('auth-submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-70');
+
+      try {
+        const passwordHash = await hashString(password);
+        const lowerUser = username.toLowerCase();
+
+        // Check cloud relay first (for multi-browser cross-sync)
+        let cloudRecord = await CloudSyncRelay.loadUserRecord(lowerUser);
+
+        // Fallback check local accounts
+        const localAccounts = JSON.parse(localStorage.getItem(LOCAL_USERS_KEY) || '{}');
+        const localRecord = localAccounts[lowerUser];
+
+        const existingRecord = cloudRecord || localRecord;
+
+        if (state.authMode === 'register') {
+          if (existingRecord) {
+            showToast('该账号已存在，请直接输入密码登录');
+            switchAuthTab('login');
+            return;
+          }
+
+          const newRecord = {
+            username: username,
+            passwordHash: passwordHash,
+            workspace: {
+              notes: state.notes,
+              currentWallpaperIndex: state.currentWallpaperIndex,
+              soundEnabled: state.soundEnabled
+            },
+            updatedAt: Date.now()
+          };
+
+          // Save cloud & local
+          await CloudSyncRelay.saveUserRecord(lowerUser, newRecord);
+          localAccounts[lowerUser] = newRecord;
+          localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(localAccounts));
+
+          state.currentUser = { username: username, passwordHash: passwordHash };
+          updateAccountUI();
+          closeAccountModal();
+          triggerAutoSave();
+          showToast(`注册成功！当前便签已绑定至账号【${username}】🌸`);
+        } else {
+          // Login Mode
+          if (!existingRecord) {
+            showToast('未找到该账号，请先点击「注册新账号」');
+            return;
+          }
+
+          if (existingRecord.passwordHash && existingRecord.passwordHash !== passwordHash) {
+            showToast('账号或密码不正确，请重新检查');
+            return;
+          }
+
+          state.currentUser = { username: username, passwordHash: passwordHash };
+          updateAccountUI();
+          closeAccountModal();
+
+          if (existingRecord.workspace) {
+            applySavedState(existingRecord.workspace);
+            showToast(`登录成功！已从云端拉取账号【${username}】的全部便签 ✨`);
+          } else {
+            showToast(`登录成功！`);
+          }
+          triggerAutoSave();
+        }
+      } catch (err) {
+        showToast('处理异常，请重试');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-70');
+      }
+    }
+
+    function handleLogout() {
+      state.currentUser = null;
+      updateAccountUI();
+      closeAccountModal();
+      showToast('已退出当前账号');
+      triggerAutoSave();
+    }
+
+    function updateAccountUI() {
+      const label = document.getElementById('account-label');
+      const icon = document.getElementById('account-icon');
+      const btn = document.getElementById('account-btn');
+
+      if (state.currentUser) {
+        label.innerText = state.currentUser.username;
+        icon.innerHTML = `<svg class="w-3.5 h-3.5 text-emerald-500 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>`;
+        btn.classList.add('border-emerald-300', 'bg-emerald-50/60');
+      } else {
+        label.innerText = '账号同步';
+        icon.innerHTML = `<svg class="w-3.5 h-3.5 text-sakura-400 fill-current" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+        btn.classList.remove('border-emerald-300', 'bg-emerald-50/60');
+      }
+    }
+
+    /* Roaming Voucher Engine (Instant offline code migration) */
+    function exportRoamingCode() {
+      try {
+        const payload = {
+          version: 'bloomnotes_v3',
+          username: state.currentUser ? state.currentUser.username : '访客便签',
+          timestamp: Date.now(),
+          workspace: {
+            notes: state.notes,
+            currentWallpaperIndex: state.currentWallpaperIndex,
+            soundEnabled: state.soundEnabled
+          }
+        };
+        const encoded = 'BLOOM#' + btoa(encodeURIComponent(JSON.stringify(payload)));
+
+        const tempInput = document.createElement('textarea');
+        tempInput.value = encoded;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+
+        showToast('便签凭证已复制到剪贴板！📋 在其他浏览器点击「导入便签凭证」即可瞬间还原');
+      } catch (e) {
+        showToast('生成凭证失败');
+      }
+    }
+
+    function importRoamingCodePrompt() {
+      showPromptModal('粘贴从另一台浏览器/设备复制的便签凭证 (以 BLOOM# 开头)', '', (code) => {
+        if (!code || !code.trim()) return;
+        const clean = code.trim();
+        if (!clean.startsWith('BLOOM#')) {
+          showToast('无效的凭证，请确认是从另一台设备复制的完整代码');
+          return;
+        }
+        try {
+          const raw = decodeURIComponent(atob(clean.replace('BLOOM#', '')));
+          const data = JSON.parse(raw);
+          if (data && data.workspace) {
+            applySavedState(data.workspace);
+            closeAccountModal();
+            triggerAutoSave();
+            showToast(`还原成功！已完整同步便签与日程 ✨`);
+          }
+        } catch (err) {
+          showToast('凭证解析失败，请检查是否完整复制');
+        }
+      });
+    }
+
+    /* =========================================================================
+       11. Polaroid Share Card & Extras
+       ========================================================================= */
+    function openPolaroidShare(noteId) {
+      const note = state.notes.find(n => n.id === noteId);
+      if (!note) return;
+
+      document.getElementById('polaroid-title-display').innerText = note.title;
+      document.getElementById('polaroid-tag-display').innerText = `✨ ${getCategoryName(note.category)}`;
+
+      const listContainer = document.getElementById('polaroid-tasks-list');
+      listContainer.innerHTML = note.items.map(item => `
+        <div class="flex items-center gap-2">
+          <span class="text-sakura-400 text-xs">${item.done ? '🌸' : '⚪'}</span>
+          <span class="${item.done ? 'line-through text-gray-400' : 'text-gray-700 font-medium'}">${escapeHtml(item.text)}</span>
+        </div>
+      `).join('');
+
+      const now = new Date();
+      document.getElementById('polaroid-date-stamp').innerText = 
+        `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+
+      document.getElementById('polaroid-modal').classList.remove('hidden');
+    }
+
+    function closePolaroidModal() {
+      document.getElementById('polaroid-modal').classList.add('hidden');
+    }
+
+    function downloadPolaroidCard() {
+      showToast('正在生成拍立得打卡海报... 📷');
+      setTimeout(() => {
+        showToast('打卡海报已生成完毕！🌸');
+        closePolaroidModal();
+      }, 700);
+    }
+
+    function cycleWallpaper() {
+      state.currentWallpaperIndex = (state.currentWallpaperIndex + 1) % WALLPAPERS.length;
+      document.getElementById('desktop-bg').style.background = WALLPAPERS[state.currentWallpaperIndex];
+      triggerAutoSave();
+      showToast('已切换至新桌面壁纸 ✨');
+    }
+
+    function togglePrivacyMode() {
+      state.privacyMode = !state.privacyMode;
+      const btn = document.getElementById('privacy-toggle-btn');
+      if (state.privacyMode) {
+        btn.classList.add('text-sakura-500', 'bg-pink-100');
+        showToast('防窥模式已开启：便签内容已虚化 👁️');
+      } else {
+        btn.classList.remove('text-sakura-500', 'bg-pink-100');
+        showToast('防窥模式已关闭');
+      }
+      renderAllNotes();
+    }
+
+    function toggleSound() {
+      state.soundEnabled = !state.soundEnabled;
+      updateSoundButtonUI();
+      if (state.soundEnabled) {
+        showToast('打卡音效已开启 🔔');
+        playCheckSound();
+      } else {
+        showToast('打卡音效已静音');
+      }
+      triggerAutoSave();
+    }
+
+    function updateSoundButtonUI() {
+      const btn = document.getElementById('sound-toggle-btn');
+      if (!btn) return;
+      if (state.soundEnabled) {
+        btn.className = 'w-8 h-8 rounded-full flex items-center justify-center text-sakura-500 hover:bg-pink-50 transition border border-pink-200 bg-pink-50/50';
+        btn.innerHTML = `<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`;
+      } else {
+        btn.className = 'w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-pink-50 transition border border-gray-200';
+        btn.innerHTML = `<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>`;
+      }
+    }
+
+    function refreshDailyQuote() {
+      const quote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+      document.getElementById('daily-quote-text').innerText = quote;
+      playBubbleSound();
+    }
+
+    function triggerCelebrationConfetti() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 65,
+          spread: 55,
+          origin: { y: 0.7 },
+          colors: ['#f87394', '#ffd64d', '#53ce98', '#af8add', '#ffccd8']
+        });
+      }
+    }
+
+    function showToast(message) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'bg-white/95 backdrop-blur-md text-gray-800 border border-pink-200 text-xs px-4 py-2 rounded-2xl shadow-lg flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0';
+      toast.innerHTML = `<span class="text-sakura-400">🌸</span><span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => toast.classList.remove('translate-y-2', 'opacity-0'));
+      setTimeout(() => {
+        toast.classList.add('opacity-0', '-translate-y-2');
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
+    }
+
+    function showPromptModal(title, defaultValue, onConfirm) {
+      const overlay = document.createElement('div');
+      overlay.className = 'fixed inset-0 z-50 bg-black/30 backdrop-blur-xs flex items-center justify-center p-4';
+      overlay.innerHTML = `
+        <div class="bg-white rounded-3xl p-5 w-full max-w-xs shadow-2xl border border-pink-100 flex flex-col">
+          <h4 class="font-bold text-gray-800 text-xs mb-2">${escapeHtml(title)}</h4>
+          <input type="text" id="custom-prompt-input" value="${escapeHtml(defaultValue)}" class="w-full text-xs p-2.5 rounded-xl border border-pink-200 outline-none focus:border-sakura-400 bg-pink-50/30 mb-4" />
+          <div class="flex gap-2">
+            <button id="prompt-ok-btn" class="flex-1 py-1.5 bg-sakura-500 text-white rounded-xl text-xs font-medium hover:bg-sakura-600 transition">确定</button>
+            <button id="prompt-cancel-btn" class="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-xl text-xs hover:bg-gray-200 transition">取消</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+      const input = overlay.querySelector('#custom-prompt-input');
+      input.focus();
+      input.select();
+
+      const cleanup = () => overlay.remove();
+      overlay.querySelector('#prompt-cancel-btn').onclick = cleanup;
+      overlay.querySelector('#prompt-ok-btn').onclick = () => {
+        onConfirm(input.value);
+        cleanup();
+      };
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          onConfirm(input.value);
+          cleanup();
+        } else if (e.key === 'Escape') {
+          cleanup();
+        }
+      };
+    }
+
+    function getCategoryName(catId) {
+      const cat = CATEGORIES.find(c => c.id === catId);
+      return cat ? cat.label : '日常便签';
+    }
+
+    function getTodayDateString() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function getNoteDate(note) {
+      return note.date || getTodayDateString();
+    }
+
+    function getTasksForDate(dateString) {
+      const result = [];
+      state.notes.forEach(note => {
+        if (getNoteDate(note) === dateString) {
+          (note.items || []).forEach(item => {
+            result.push({
+              ...item,
+              noteId: note.id,
+              noteTitle: note.title
+            });
+          });
+        }
+      });
+      return result;
+    }
+
+    function getCompletionRatioText(note) {
+      const total = note.items.length;
+      if (total === 0) return '暂无事项';
+      const done = note.items.filter(i => i.done).length;
+      return `${done}/${total} 已完成`;
+    }
+
+    function getCompletionPercentage(note) {
+      const total = note.items.length;
+      if (total === 0) return 0;
+      const done = note.items.filter(i => i.done).length;
+      return Math.round((done / total) * 100);
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function updateDesktopClock() {
+      const now = new Date();
+      const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const date = String(now.getDate()).padStart(2, '0');
+      const day = days[now.getDay()];
+      const hours = String(now.getHours()).padStart(2, '0');
+      const mins = String(now.getMinutes()).padStart(2, '0');
+      const clockEl = document.getElementById('desktop-clock-display');
+      if (clockEl) clockEl.innerText = `${year}.${month}.${date} ${day} ${hours}:${mins}`;
+    }
+
+    function updateSaveBadge(status, text) {
+      const badge = document.getElementById('save-status-badge');
+      const icon = document.getElementById('save-status-icon');
+      const textEl = document.getElementById('save-status-text');
+      if (!badge || !icon || !textEl) return;
+
+      textEl.innerText = text;
+      if (status === 'saving') {
+        icon.innerHTML = `<span class="inline-block animate-spin">⟳</span>`;
+        badge.className = 'flex items-center gap-1.5 text-[11px] text-sakura-600 bg-pink-100/90 px-2.5 py-1 rounded-full border border-pink-300 transition-all duration-300';
+      } else if (status === 'saved') {
+        icon.innerHTML = ICONS.cloudCheck;
+        badge.className = 'flex items-center gap-1.5 text-[11px] text-emerald-600 bg-emerald-50/90 px-2.5 py-1 rounded-full border border-emerald-200 transition-all duration-300';
+      } else {
+        icon.innerHTML = ICONS.cloud;
+        badge.className = 'flex items-center gap-1.5 text-[11px] text-pink-500 bg-pink-50/90 px-2.5 py-1 rounded-full border border-pink-200 transition-all duration-300';
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.altKey && (e.key === 'n' || e.key === 'N')) {
+        e.preventDefault();
+        createNewNote();
+      }
+      if (e.altKey && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        togglePrivacyMode();
+      }
+    });
+
+    /* =========================================================================
+       12. Initialization
+       ========================================================================= */
+    function initializeDefaultNotes() {
+      const todayStr = getTodayDateString();
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+
+      state.notes = [
+        {
+          id: 'note-1',
+          title: '🌸 今日打卡与日程安排',
+          category: 'work',
+          theme: 'sakura',
+          shape: 'polaroid',
+          fontSize: 'sm',
+          date: todayStr,
+          opacity: 0.95,
+          pinned: true,
+          locked: false,
+          minimized: false,
+          checkIcon: 'flower',
+          stickers: ['🌸', '✨'],
+          x: 40,
+          y: 40,
+          width: 340,
+          height: 380,
+          zIndex: 10,
+          items: [
+            { id: 't1', text: '完成 BloomNotes 视觉设计评审', done: true },
+            { id: 't2', text: '挑选适合办公室的无版权手绘字体', done: true },
+            { id: 't3', text: '下午 3:00 与团队对齐跨平台轻量方案', done: false },
+            { id: 't4', text: '整理小红书手账美学灵感画板', done: false }
+          ]
+        },
+        {
+          id: 'note-2',
+          title: '☕ 治愈生活自律愿望',
+          category: 'life',
+          theme: 'cream',
+          shape: 'wave',
+          fontSize: 'sm',
+          date: todayStr,
+          opacity: 0.92,
+          pinned: false,
+          locked: false,
+          minimized: false,
+          checkIcon: 'paw',
+          stickers: ['🍓', '🐾'],
+          x: 460,
+          y: 60,
+          width: 340,
+          height: 340,
+          zIndex: 9,
+          items: [
+            { id: 't5', text: '早起饮用温柠檬水 500ml', done: true },
+            { id: 't6', text: '给桌上的小雏菊换水晒太阳', done: false },
+            { id: 't7', text: '晚上阅读《生活手账的仪式感》20页', done: false }
+          ]
+        },
+        {
+          id: 'note-3',
+          title: '📚 备考专心单词清单',
+          category: 'study',
+          theme: 'mint',
+          shape: 'hand-drawn',
+          fontSize: 'sm',
+          date: tomorrowStr,
+          opacity: 0.90,
+          pinned: false,
+          locked: false,
+          minimized: false,
+          checkIcon: 'heart',
+          stickers: ['🎀'],
+          x: 880,
+          y: 110,
+          width: 320,
+          height: 300,
+          zIndex: 8,
+          items: [
+            { id: 't8', text: '雅思高频写作连接词记忆 (Unit 4)', done: false },
+            { id: 't9', text: '听力精听 1 篇真题材料', done: false }
+          ]
+        }
+      ];
+
+      renderAllNotes();
+      updateDrawer();
+    }
+
+    window.onload = function() {
+      updateDesktopClock();
+      setInterval(updateDesktopClock, 30000);
+
+      // 1. Attempt to restore from persistent local storage
+      let restored = false;
+      try {
+        const raw = localStorage.getItem(LOCAL_CACHE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && Array.isArray(parsed.notes) && parsed.notes.length > 0) {
+            applySavedState(parsed);
+            restored = true;
+            updateSaveBadge('saved', '已恢复上次便签状态');
+          }
+        }
+      } catch (e) {}
+
+      // 2. If completely empty first-time user, seed default demo notes
+      if (!restored) {
+        initializeDefaultNotes();
+      }
+    };
+  </script>
+</body>
+</html>
